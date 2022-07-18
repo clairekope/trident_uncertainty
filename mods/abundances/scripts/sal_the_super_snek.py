@@ -123,10 +123,11 @@ dat_path = rs_path +'/data'
 stat_path = rs_path +'/stats'
 
 # creating dictionaries to store all of our data (if they don't already exist)
-if os.path.exists(halo_path) == "False":
+if os.path.exists(halo_path) == False:
     os.mkdir(path+'/halo'+f'{halo}')
     
-if os.path.exists(rs_path) == "False":
+if os.path.exists(rs_path) == False:
+    os.mkdir(rs_path)
     os.mkdir(ray_path) 
     os.mkdir(dat_path)
     os.mkdir(stat_path)
@@ -170,29 +171,26 @@ ray_arr = np.array(ray_list)
 ray_files_split = np.array_split(ray_arr, comm.size)
 my_rays = ray_files_split[ comm.rank ]
 
-ion_list = ['C II', 'C III', 'C IV', 'Si II', 'Si III', 'Si IV', 'Fe II', 'N II', 'N III', 'N IV', 'N V', 'O I', 'O II', 'O III', 'O IV', 'O V', 'O VI', 'Mg II', 'S II', 'S III', 'S IV', 'S V', 'S VI'] ##lists of elements and abundances 
-new_ion_list = ['C_II', 'C_III', 'C_IV', 'Si_II', 'Si_III', 'Si_IV', 'Fe_II',  'N_II', 'N_III', 'N_IV', 'N_V', 'O_I', 'O_II', 'O_III', 'O_IV', 'O_V', 'O_VI', 'Mg_II', 'S_II', 'S_III', 'S_IV', 'S_V', 'S_VI']
+ion_list = ['C I', 'C II', 'C III', 'C IV','Si I', 'Si II', 'Si III', 'Si IV', 'Fe I', 'Fe II', 'Fe III', 'N I', 'N II', 'N III', 'N IV', 'N V', 'O I', 'O II', 'O III', 'O IV', 'O V', 'O VI', 'Mg I', 'Mg II', 'S I', 'S II', 'S III', 'S IV', 'S V', 'S VI'] ##lists of elements and abundances 
+new_ion_list = ['C_I', 'C_II', 'C_III', 'C_IV','Si_I', 'Si_II', 'Si_III', 'Si_IV', 'Fe_I', 'Fe_II', 'Fe_III', 'N_I', 'N_II', 'N_III', 'N_IV', 'N_V', 'O_I', 'O_II', 'O_III', 'O_IV', 'O_V', 'O_VI', 'Mg_I', 'Mg_II', 'S_I', 'S_II', 'S_III', 'S_IV', 'S_V', 'S_VI']
 
 if 'file_path' in dic_args:
-	abun = pd.read_csv(args.file_path, delim_whitespace=True)
-	nrows = len(abun)
-	saved = generate_names(nrows)
-	for row_num in range(nrows):
-		for i in ion_list:
-			abundances = abun.iloc[row_num].to_dict()
-			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
-			print("Go look at your data!")
+    abun = pd.read_csv(args.file_path, delim_whitespace=True)
+    nrows = len(abun)
+    saved = generate_names(nrows)
+    for row_num in range(nrows):
+        for i in ion_list:
+            try:
+                abundances = abun.iloc[row_num].to_dict()
+                abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
+                df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+                print("Go look at your data!")
+            except AttributeError: ##handles if there are no clumps in a halo
+                df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
 
-else:
-	nrows = 0
-	saved = generate_names(nrows)
-	for i in ion_list:
-		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
-		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
-		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ').drop(columns='index')
-		print("Go look at your data!")
+
 
 def get_mad_of_element(element):
     abun = pd.read_csv(args.file_path, delim_whitespace=True)
@@ -215,10 +213,13 @@ for ion in new_ion_list:
             n_len = len(str(m))
             n_zeros = ndigits - n_len
             k = "0" * n_zeros + str(m)
-            row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
-            row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
-            df = row_work.reset_index().drop(columns="index") ##make indexing work
-            rowlist.append(df)
+            try:
+                row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
+                row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
+                df = row_work.reset_index().drop(columns="index") ##make indexing work
+                rowlist.append(df)
+            except FileNotFoundError: ##handles if there are no clumps in a halo
+                continue
 
         mx= 0  ##find how long each array should be
         for ds in rowlist: #find the cell index of the furthest clump
@@ -438,7 +439,7 @@ for ion in new_ion_list:
 
     
     for r in range(raynum):
-        if os.path.exists(f'/mnt/scratch/f0104093/cgm_abundance_variance/Match_{ion}_Ray{r}.pickle'):
+        if os.path.exists(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/Match_{ion}_Ray{r}.pickle'):
             pickle_match_off = open(f"Match_{ion}_Ray{r}.pickle", 'rb') ##get previously made data
             match = pickle.load(pickle_match_off)
     
@@ -457,10 +458,13 @@ for ion in new_ion_list:
                 n_len = len(str(m))
                 n_zeros = ndigits - n_len
                 p = "0" * n_zeros + str(m)
-                row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{p}_{ion}.txt", delim_whitespace=True) ##read in data files
-                row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
-                df = row_work.reset_index().drop(columns="index") ##make indexing work
-                var_rows.append(df)
+                try:
+                    row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{p}_{ion}.txt", delim_whitespace=True) ##read in data files
+                    row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
+                    df = row_work.reset_index().drop(columns="index") ##make indexing work
+                    var_rows.append(df)
+                except FileNotFoundError:##handles if there are no clumps in a halo
+                    continue
     
             sup_st = [] ##get indexes of superclumps
             sup_en = []
