@@ -146,7 +146,7 @@ units_dict = dict(density='g/cm**3', metallicity='Zsun')
 ray_num=f'{0:0{len(str(args.nrays))}d}'
 ray_file=f'{ray_path}/ray{ray_num}.h5'
 
-np.random.seed(13)
+np.random.seed(11)
 
 #get those rays babyyyy
 # CK: Check that rays already exist, and that the have the additional fields contained
@@ -170,8 +170,8 @@ ray_arr = np.array(ray_list)
 ray_files_split = np.array_split(ray_arr, comm.size)
 my_rays = ray_files_split[ comm.rank ]
 
-ion_list = ['C II', 'C IV', 'O VI'] ##lists of elements and abundances 
-new_ion_list = ['C_II', 'C_IV', 'O_VI']
+ion_list = ['C II', 'C III', 'C IV', 'Si II', 'Si III', 'Si IV', 'Fe II', 'N II', 'N III', 'N IV', 'N V', 'O I', 'O II', 'O III', 'O IV', 'O V', 'O VI', 'Mg II', 'S II', 'S III', 'S IV', 'S V', 'S VI'] ##lists of elements and abundances 
+new_ion_list = ['C_II', 'C_III', 'C_IV', 'Si_II', 'Si_III', 'Si_IV', 'Fe_II',  'N_II', 'N_III', 'N_IV', 'N_V', 'O_I', 'O_II', 'O_III', 'O_IV', 'O_V', 'O_VI', 'Mg_II', 'S_II', 'S_III', 'S_IV', 'S_V', 'S_VI']
 
 if 'file_path' in dic_args:
 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
@@ -603,10 +603,20 @@ for ion in new_ion_list:
                 elif sol_ab_col_dens == 0.0 or len(full_col_density) == 0:
                     diff_from_sol.append(np.NaN)
                     
-                if ion == 'C_II' or ion == 'C_IV':
+                if ion == 'C_II' or ion == 'C_IV' or ion == 'C_I' or ion == 'C_III': 
                     mad_of_element.append(get_mad_of_element('C'))
-                elif ion == 'O_VI':
-                    mad_of_element.append(get_mad_of_element('O'))
+                elif ion == 'O_VI' or ion == 'O_I' or ion == 'O_II' or ion == 'O_III' or ion == 'O_IV' or ion == 'O_V':
+                   mad_of_element.append(get_mad_of_element('O'))
+                elif ion == 'Si_I' or ion =='Si_II' or ion == 'Si_III' or ion == 'Si_IV':
+                   mad_of_element.append(get_mad_of_element('Si'))
+                elif ion == 'Fe_I'or ion == 'Fe_II' or ion == 'Fe_III':
+                   mad_of_element.append(get_mad_of_element('Fe'))
+                elif ion == 'N_I' or ion == 'N_II' or ion == 'N_III' or ion == 'N_IV' or ion == 'N_V':
+                   mad_of_element.append(get_mad_of_element('N'))
+                elif ion == 'Mg_I' or ion == 'Mg_II':
+                   mad_of_element.append(get_mad_of_element('Mg'))   
+                elif ion == 'S_I' or ion == 'S_II' or ion == 'S_III' or ion == 'S_IV' or ion == 'S_V' or ion == 'S_VI':
+                   mad_of_element.append(get_mad_of_element('S'))
     
                 
     
