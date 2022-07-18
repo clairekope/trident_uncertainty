@@ -174,21 +174,21 @@ my_rays = ray_files_split[ comm.rank ]
 ion_list = ['C I', 'C II', 'C III', 'C IV','Si I', 'Si II', 'Si III', 'Si IV', 'Fe I', 'Fe II', 'Fe III', 'N I', 'N II', 'N III', 'N IV', 'N V', 'O I', 'O II', 'O III', 'O IV', 'O V', 'O VI', 'Mg I', 'Mg II', 'S I', 'S II', 'S III', 'S IV', 'S V', 'S VI'] ##lists of elements and abundances 
 new_ion_list = ['C_I', 'C_II', 'C_III', 'C_IV','Si_I', 'Si_II', 'Si_III', 'Si_IV', 'Fe_I', 'Fe_II', 'Fe_III', 'N_I', 'N_II', 'N_III', 'N_IV', 'N_V', 'O_I', 'O_II', 'O_III', 'O_IV', 'O_V', 'O_VI', 'Mg_I', 'Mg_II', 'S_I', 'S_II', 'S_III', 'S_IV', 'S_V', 'S_VI']
 
-if 'file_path' in dic_args:
-    abun = pd.read_csv(args.file_path, delim_whitespace=True)
-    nrows = len(abun)
-    saved = generate_names(nrows)
-    for row_num in range(nrows):
-        for i in ion_list:
-            try:
-                abundances = abun.iloc[row_num].to_dict()
-                abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-                df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
-                print("Go look at your data!")
-            except AttributeError: ##handles if there are no clumps in a halo
-                df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
-                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
+# if 'file_path' in dic_args:
+#     abun = pd.read_csv(args.file_path, delim_whitespace=True)
+#     nrows = len(abun)
+#     saved = generate_names(nrows)
+#     for row_num in range(nrows):
+#         for i in ion_list:
+#             try:
+#                 abundances = abun.iloc[row_num].to_dict()
+#                 abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
+#                 df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
+#                 df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+#                 print("Go look at your data!")
+#             except AttributeError: ##handles if there are no clumps in a halo
+#                 df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
+#                 df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
 
 
 
@@ -490,6 +490,7 @@ for ion in new_ion_list:
                 short_done = []
                 split_done = []
                 sol_ab_col_dens = 0.0
+                print(sup_st)
     
                 for row, index in match.items(): ##first, see what matches the super clump
     
@@ -549,6 +550,7 @@ for ion in new_ion_list:
                     temp_temp = []
                     temp_rad = []
                     col_dens_for_weights = []
+                    
     
                     for j in range(len(indexm)):
     
@@ -642,10 +644,14 @@ for ion in new_ion_list:
         clump_stats["category_rep_clump"] = cat_rep_clump
         clump_stats["mad_of_element"] = mad_of_element
     
-        print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
+        print(ion, len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
         
-        df = pd.DataFrame.from_dict(clump_stats)
-        df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
+        try:
+            df = pd.DataFrame.from_dict(clump_stats)
+            df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
+        except ValueError:
+            print('This really should not happen and I can not figure out why it does unless abundance file mismatches other args')
+            continue
         ##as we're done with each file, delete it so we don't get residual data we don't need
    
         os.remove(f"Match_{ion}_Ray{r}.pickle")
