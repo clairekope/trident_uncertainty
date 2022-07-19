@@ -16,13 +16,13 @@ def get_halo_names(num): ##get the FOGGIE name for each halo ID
 rs_lis = [2.0, 2.5] ##list of rs to analyze, true
 
 
-ion_dict = {'C_I' : 'grey', 'C_II' : 'darkgrey', 'C_III' : 'silver', 'C_IV' : 'dimgrey', 'Si_I' : 'bisque', 'Si_II' : 'navajowhite', 'Si_III' : 'blanchedalmond', 'Si_IV' : 'moccasin', 'Fe_I' : 'salmon', 'Fe_II' : 'maroon', 'Fe_III' : 'tomato', 'N_I' : 'olivedrab', 'N_II' : 'forestgreen', 'N_III' : 'limegreen', 'N_IV' : 'green', 'N_V' : 'seagreen', 'O_I' : 'cornflowerblue', 'O_II' : 'royalblue', 'O_III' :'navy', 'O_IV' : 'darkblue', 'O_V' : 'mediumblue', 'O_VI' : 'blue', 'Mg_I' : 'aqua', 'Mg_II' : 'cyan', 'S_I' : 'cornsilk', 'S_II' : 'darkgoldenrod', 'S_III' : 'gold', 'S_IV' : 'khacki', 'S_V' : 'goldenrod', 'S_VI' : 'lemonchiffon'} ##dictionary of ions to colors
+ion_dict = {'C_I' : 'silver', 'C_II' : 'darkgrey', 'C_III' : 'grey', 'C_IV' : 'dimgrey', 'Si_I' : 'bisque', 'Si_II' : 'navajowhite', 'Si_III' : 'blanchedalmond', 'Si_IV' : 'moccasin', 'Fe_I' : 'salmon', 'Fe_II' : 'tomato', 'Fe_III' : 'maroon', 'N_I' : 'limegreen', 'N_II' : 'forestgreen', 'N_III' :'olivedrab' , 'N_IV' :'seagreen' , 'N_V' : 'green' , 'O_I' : 'cornflowerblue', 'O_II' : 'royalblue', 'O_III' :'blue', 'O_IV' : 'mediumblue', 'O_V' : 'darkblue', 'O_VI' : 'navy', 'Mg_I' : 'aqua', 'Mg_II' : 'cyan', 'S_I' : 'cornsilk', 'S_II' : 'lemonchiffon', 'S_III' : 'khaki', 'S_IV' : 'gold', 'S_V' : 'goldenrod', 'S_VI' : 'darkgoldenrod'} ##dictionary of ions to colors
 
 ##set the legends to be the way I want them
 legend_elements = [Line2D([0], [0], lw= 0, color = 'k', marker = 'o', label = 'Hurricane'), Line2D([0], [0],  lw= 0, color = 'k', marker = 'x', label = 'Cyclone'), Line2D([0], [0],  lw= 0, color = 'k', marker = 'v', label = 'Squall'), Line2D([0], [0], lw= 0, color = 'k', marker = '*', label = 'Maelstrom'), Line2D([0], [0], lw= 0, color = 'k', marker = 'D', label = 'Tempest')]
 
 for ion in ion_dict.keys():
-    legend_patch = Patch(fc = iondict[ion], label = ion)
+    legend_patch = Patch(fc = ion_dict[ion], label = ion)
     legend_elements.append(legend_patch)
 
 for rs in rs_lis: ##we want one graph per redshift
@@ -43,10 +43,10 @@ for rs in rs_lis: ##we want one graph per redshift
                 continue
       
     plt.title(f"MAD of Column Density vs Column Density, Redshift {rs}") 
-    plt.legend(handles = legend_elements, ncol = 2)
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.xlabel("Median log(Column Density)")
     plt.ylabel("MAD of log(Column Density)")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/mad_vs_med_z{rs}.png') ##make sure it saves to the right place with the right name
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/mad_vs_med_z{rs}.png', bbox_inches='tight') ##make sure it saves to the right place with the right name
     plt.close() ##so the rest doesn't plot on top of this data
     ##a simmilar process is used for the rest of these plots, simply with different quantities
     
@@ -68,10 +68,10 @@ for rs in rs_lis: ##we want one graph per redshift
       
     plt.title(f"Density vs Column Density, Redshift {rs}")
     plt.yscale('log') ##has to be plotted on a log scale
-    plt.legend(handles = legend_elements, ncol = 2)
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.xlabel("Median log(Column Density)")
     plt.ylabel("log(Density)")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dens_vs_med_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dens_vs_med_z{rs}.png', bbox_inches='tight')
     plt.close()
     
     for halo in halo_marker_dict.keys():
@@ -92,10 +92,10 @@ for rs in rs_lis: ##we want one graph per redshift
       
     plt.title(f"Temperature vs Column Density, Redshift {rs}")
     plt.yscale('log') 
-    plt.legend(handles = legend_elements, ncol = 2)
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.xlabel("Median log(Column Density)")
     plt.ylabel("log(Temperature)")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/temp_vs_med_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/temp_vs_med_z{rs}.png', bbox_inches='tight')
     plt.close()
     
     for halo in halo_marker_dict.keys():
@@ -115,10 +115,10 @@ for rs in rs_lis: ##we want one graph per redshift
                 continue
       
     plt.title(f"Distance vs Column Density, Redshift {rs}")
-    plt.legend(handles = legend_elements, ncol = 2)
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.xlabel("Median log(Column Density)")
     plt.ylabel("Distance from Galaxy")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dist_vs_med_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dist_vs_med_z{rs}.png', bbox_inches='tight')
     plt.close()
 
     for halo in halo_marker_dict.keys():
@@ -139,16 +139,16 @@ for rs in rs_lis: ##we want one graph per redshift
       
     plt.title(f"Density vs Spread of Column Density , Redshift {rs}")
     plt.xscale('log')
-    plt.legend(handles = legend_elements, ncol = 2)
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.ylabel("MAD of Median log(Column Density)")
     plt.xlabel("log(Density)")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dens_vs_mad_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dens_vs_mad_z{rs}.png', bbox_inches='tight')
     plt.close()
     
     for halo in halo_marker_dict.keys():
         name = get_halo_names(halo)
         for ion in ion_dict.keys():
-           try:
+            try:
                 ds = pd.read_csv(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/halo{halo}/redshift{rs}/stats/{halo}_z{rs}_{ion}_abun_all-model-families_all-clumps.csv', delim_whitespace = True)
                 if len(ds['density']) != 0:
                     col_dens_spread = ds["mad_for_col_desnity"] ##MAD of col dons vs temperature
@@ -163,10 +163,10 @@ for rs in rs_lis: ##we want one graph per redshift
       
     plt.title(f"Temperature vs Spread of Column Density, Redshift {rs}")
     plt.xscale('log')
-    plt.legend(handles = legend_elements, ncol = 2)
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.ylabel("MAD of Median log(Column Density)")
     plt.xlabel("log(Temperature)")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/temp_vs_mad_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/temp_vs_mad_z{rs}.png', bbox_inches='tight')
     plt.close()
     
     for halo in halo_marker_dict.keys():
@@ -186,10 +186,10 @@ for rs in rs_lis: ##we want one graph per redshift
                 continue
       
     plt.title(f"Distance vs Spread of Column Density, Redshift {rs}")
-    plt.legend(handles = legend_elements, ncol = 2)
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.ylabel("MAD of Median log(Column Density)")
     plt.xlabel("Distance from Galaxy")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dist_vs_mad_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/dist_vs_mad_z{rs}.png', bbox_inches='tight')
     plt.close()
     
     for halo in halo_marker_dict.keys():
@@ -209,10 +209,10 @@ for rs in rs_lis: ##we want one graph per redshift
                 continue
       
     plt.title(f"Frequency of Split or Short Clumps vs Column Density, Redshift {rs}")
-    plt.legend(handles = legend_elements, ncol = 2, markerscale = 0.75, fontsize = 'x-small')
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
     plt.xlabel("Median log(Column Density)")
     plt.ylabel("Number of Split or Short Clumps")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/freq_vs_med_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/freq_vs_med_z{rs}.png', bbox_inches='tight')
     plt.close()
     
     for halo in halo_marker_dict.keys():
@@ -223,7 +223,7 @@ for rs in rs_lis: ##we want one graph per redshift
                 if len(ds['density']) != 0:
                     elem_mad = ds["mad_of_element"] ##MAD of elemental abundance vs MAD of the col dens
                     col_dens_spread = ds["mad_for_col_desnity"]
-                    plt.scatter(col_dens_spread, elem_mad, c = ion_dict[ion], marker = halo_marker_dict[halo])
+                    plt.scatter(elem_mad,col_dens_spread, c = ion_dict[ion], marker = halo_marker_dict[halo])
                     print('plotted!')
                 else:
                     print(f'No {ion} in halo {halo} z{rs}')
@@ -232,10 +232,11 @@ for rs in rs_lis: ##we want one graph per redshift
                 continue
       
     plt.title(f"MAD of Elemental Abundance vs MAD of Column Density, Redshift {rs}")
-    plt.legend(handles = legend_elements, ncol = 2)
-    plt.ylabel("MAD of Elemental Abundance")
-    plt.xlabel("MAD of log(Column Density)")
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/mad_vs_elem_mad_z{rs}.png')
+    plt.xscale('log')
+    plt.legend(handles = legend_elements, ncol = 3, bbox_to_anchor=(1,0), loc="lower left")
+    plt.xlabel("log(MAD of Elemental Abundance)")
+    plt.ylabel("MAD of log(Column Density)")
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/mad_vs_elem_mad_z{rs}.png', bbox_inches='tight')
     plt.close()
     
     ##this one is different because it's a histogram and not a scatter plot
@@ -257,11 +258,11 @@ for rs in rs_lis: ##we want one graph per redshift
                 continue
                     
       
-    plt.hist(diff_list) ##make the histogram
+    plt.hist(diff_list, bins = 5) ##make the histogram
     plt.title(f"Diffrence between Solar Abundance and Median Column Density, Redshift {rs}") ##needs a better title but I can't think of one right now
     plt.ylabel("frequency")
     plt.xlabel("dex of the difference between Solar Abundance Column Density and Median Column Density") ##has to be in dex(order of magnitude) because of how sal the super snake works
-    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/solar_diff_z{rs}.png')
+    plt.savefig(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/graphs/solar_diff_z{rs}.png', bbox_inches='tight')
     plt.close()
 
 print('All done!')
