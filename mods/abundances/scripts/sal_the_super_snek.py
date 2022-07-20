@@ -123,10 +123,11 @@ dat_path = rs_path +'/data'
 stat_path = rs_path +'/stats'
 
 # creating dictionaries to store all of our data (if they don't already exist)
-if os.path.exists(halo_path) == "False":
+if os.path.exists(halo_path) == False:
     os.mkdir(path+'/halo'+f'{halo}')
     
-if os.path.exists(rs_path) == "False":
+if os.path.exists(rs_path) == False:
+    os.mkdir(rs_path)
     os.mkdir(ray_path) 
     os.mkdir(dat_path)
     os.mkdir(stat_path)
@@ -146,7 +147,7 @@ units_dict = dict(density='g/cm**3', metallicity='Zsun')
 ray_num=f'{0:0{len(str(args.nrays))}d}'
 ray_file=f'{ray_path}/ray{ray_num}.h5'
 
-np.random.seed(13)
+np.random.seed(11)
 
 #get those rays babyyyy
 # CK: Check that rays already exist, and that the have the additional fields contained
@@ -170,36 +171,40 @@ ray_arr = np.array(ray_list)
 ray_files_split = np.array_split(ray_arr, comm.size)
 my_rays = ray_files_split[ comm.rank ]
 
-ion_list = ['C II', 'C IV', 'O VI']
-new_ion_list = ['C_II', 'C_IV', 'O_VI']
+ion_list = ['C I', 'C II', 'C III', 'C IV','Si I', 'Si II', 'Si III', 'Si IV', 'Fe I', 'Fe II', 'Fe III', 'N I', 'N II', 'N III', 'N IV', 'N V', 'O I', 'O II', 'O III', 'O IV', 'O V', 'O VI', 'Mg I', 'Mg II', 'S I', 'S II', 'S III', 'S IV', 'S V', 'S VI'] ##lists of elements and abundances 
+new_ion_list = ['C_I', 'C_II', 'C_III', 'C_IV','Si_I', 'Si_II', 'Si_III', 'Si_IV', 'Fe_I', 'Fe_II', 'Fe_III', 'N_I', 'N_II', 'N_III', 'N_IV', 'N_V', 'O_I', 'O_II', 'O_III', 'O_IV', 'O_V', 'O_VI', 'Mg_I', 'Mg_II', 'S_I', 'S_II', 'S_III', 'S_IV', 'S_V', 'S_VI']
 
-# if 'file_path' in dic_args:
-# 	abun = pd.read_csv(args.file_path, delim_whitespace=True)
-# 	nrows = len(abun)
-# 	saved = generate_names(nrows)
-# 	for row_num in range(nrows):
-# 		for i in ion_list:
-# 			abundances = abun.iloc[row_num].to_dict()
-# 			abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-# 			df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-# 			df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
-# 			print("Go look at your data!")
+if 'file_path' in dic_args:
+    abun = pd.read_csv(args.file_path, delim_whitespace=True)
+    nrows = len(abun)
+    saved = generate_names(nrows)
+    for row_num in range(nrows):
+        for i in ion_list:
+            try:
+                abundances = abun.iloc[row_num].to_dict()
+                abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
+                df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+                print("Go look at your data!")
+            except AttributeError: ##handles if there are no clumps in a halo
+                df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
 
-# else:
-# 	nrows = 0
-# 	saved = generate_names(nrows)
-# 	for i in ion_list:
-# 		abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, abundance_table = None, calc_missing=True)
-# 		df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict)
-# 		df.to_csv(f'{dat_path}/data_SolAb_{i.replace(" ", "_")}.txt', sep = ' ').drop(columns='index')
-# 		print("Go look at your data!")
-            
+
+
+def get_mad_of_element(element):
+    abun = pd.read_csv(args.file_path, delim_whitespace=True)
+    specific_abun = abun[element]
+    mad_of_element = stats.median_abs_deviation(specific_abun)
+    return mad_of_element
+        
             
 for ion in new_ion_list:
     ##categorize clumps##
     datanum = len(pd.read_csv(args.file_path, delim_whitespace=True)) ##number of rows on the abundance table
     ndigits= len(str(datanum))
     raynum = args.nrays ##number of rays used, modify as needed
+        
 
     for r in range(raynum):
         rowlist = []
@@ -208,19 +213,24 @@ for ion in new_ion_list:
             n_len = len(str(m))
             n_zeros = ndigits - n_len
             k = "0" * n_zeros + str(m)
-            row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
-            row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
-            df = row_work.reset_index().drop(columns="index") ##make indexing work
-            rowlist.append(df)
+            try:
+                row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{k}_{ion}.txt", delim_whitespace=True) ##read in data files
+                row_work = row_data[row_data["lightray_index"]==r] ##filter to only ray1
+                df = row_work.reset_index().drop(columns="index") ##make indexing work
+                rowlist.append(df)
+            except FileNotFoundError: ##handles if there are no clumps in a halo
+                continue
 
         mx= 0  ##find how long each array should be
         for ds in rowlist: #find the cell index of the furthest clump
             if len(ds['interval_end']) == 0: ##handles if there are no clumps in a row
-                break
+                continue
             else:
                 row_mx = max(ds["interval_end"])
-                if row_mx>mx:
-                    mx=row_mx
+                if row_mx > mx:
+                    mx = row_mx
+                    print(mx)
+        print(f'ion: {ion}, ray: {r}, MAX: {mx}')
         
     
         super_clumps = np.zeros(int(mx))
@@ -322,7 +332,7 @@ for ion in new_ion_list:
 
                 if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
                     if super_clumps[i-1]==2:
-                        sup_en = i-2
+                        sup_en = i-2 
                         sup_st = sup_st_true[0] ##edge case handling
 
                     if super_clumps[i-1] == 0 or super_clumps[i-1] == 1:
@@ -426,11 +436,12 @@ for ion in new_ion_list:
     rows_of_rep_clumps = []
     cat_rep_clump = []
     diff_from_sol = []
-    sol_ab_col_dens = 0
+    mad_of_element =[]
+   
 
     
     for r in range(raynum):
-        if os.path.exists(f'/mnt/scratch/f0104093/cgm_abundance_variance/Match_{ion}_Ray{r}.pickle'):
+        if os.path.exists(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/Match_{ion}_Ray{r}.pickle'):
             pickle_match_off = open(f"Match_{ion}_Ray{r}.pickle", 'rb') ##get previously made data
             match = pickle.load(pickle_match_off)
     
@@ -449,10 +460,13 @@ for ion in new_ion_list:
                 n_len = len(str(m))
                 n_zeros = ndigits - n_len
                 p = "0" * n_zeros + str(m)
-                row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{p}_{ion}.txt", delim_whitespace=True) ##read in data files
-                row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
-                df = row_work.reset_index().drop(columns="index") ##make indexing work
-                var_rows.append(df)
+                try:
+                    row_data = pd.read_csv(dat_path+f"/data_AbundanceRow{p}_{ion}.txt", delim_whitespace=True) ##read in data files
+                    row_work = row_data[row_data["lightray_index"]==r] ##filter to only one ray
+                    df = row_work.reset_index().drop(columns="index") ##make indexing work
+                    var_rows.append(df)
+                except FileNotFoundError:##handles if there are no clumps in a halo
+                    continue
     
             sup_st = [] ##get indexes of superclumps
             sup_en = []
@@ -471,12 +485,14 @@ for ion in new_ion_list:
             num_spl_sho = 0
     
             for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps
+                print(f'Start: {sup_st}, End: {sup_en}')
                 col_density_match = [] ##lists for col_density
                 col_density_split = []
                 col_density_short = []
                 match_done = [] ##keep track of which super clumps already have a representative
                 short_done = []
                 split_done = []
+                sol_ab_col_dens = 0.0
     
                 for row, index in match.items(): ##first, see what matches the super clump
     
@@ -490,6 +506,7 @@ for ion in new_ion_list:
                                 col_density_match.append(ds["col_dens"][int(indexq[0])]) ##get column density
                             elif row == 1: ##keep frack of what the solar abundance is 
                                 sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
+                                print(f"SOLAR: {row}, {sol_ab_col_dens}")
                             if sup_st[k] not in match_done: ##if this is the first one done for a super clump, get all the other data and make this clump a "representative" of the super clump
                                 print('Match:', row, index[j][0], sup_st[k])
                                 distances.append(ds["radius"][int(indexq[0])])
@@ -514,6 +531,7 @@ for ion in new_ion_list:
                                 col_density_short.append(ds["col_dens"][int(indexq[0])]) ##get column density
                             elif rows == 1:
                                 sol_ab_col_dens = ds["col_dens"][int(indexq[0])]
+                                print(f"SOLAR: {rows}, {sol_ab_col_dens}")
     
                             if (len(match_done) == 0) and (sup_st[k] not in short_done):
                                 print('Short:', row, indexs[j][0], sup_st[k])
@@ -534,6 +552,7 @@ for ion in new_ion_list:
                     temp_temp = []
                     temp_rad = []
                     col_dens_for_weights = []
+                    
     
                     for j in range(len(indexm)):
     
@@ -558,8 +577,9 @@ for ion in new_ion_list:
                                     densities.append(weighted_av(temp_dens, col_dens_for_weights))
                                     temperatures.append(weighted_av(temp_temp, col_dens_for_weights))
                                     rows_of_rep_clumps.append(row)
-                                    split_done.append(sup_st[k])
                                     cat_rep_clump.append('split')
+                                    split_done.append(sup_st[k])
+                                    
     
     
                     if len(temp_col_dens) != 0 and rowm != 1: ##finally, get one value for the col_dens of the whole thing
@@ -585,10 +605,25 @@ for ion in new_ion_list:
                 freq_split_short.append(num_spl_sho)
                 num_spl_sho = 0
                 
-                if sol_ab_col_dens != 0: ##handle the case where there is no col_density for the solar abundance
-                    diff_from_sol.append(np.log10((10 ** sol_ab_col_dens) -(10 ** np.median(full_col_density))))
-                else:
+                if sol_ab_col_dens != 0.0 and len(full_col_density) != 0: ##handle the case where there is no col_density for the solar abundance
+                    diff_from_sol.append(int(sol_ab_col_dens) - int(np.median(full_col_density)))
+                elif sol_ab_col_dens == 0.0 or len(full_col_density) == 0:
                     diff_from_sol.append(np.NaN)
+                    
+                if ion == 'C_II' or ion == 'C_IV' or ion == 'C_I' or ion == 'C_III': 
+                    mad_of_element.append(get_mad_of_element('C'))
+                elif ion == 'O_VI' or ion == 'O_I' or ion == 'O_II' or ion == 'O_III' or ion == 'O_IV' or ion == 'O_V':
+                   mad_of_element.append(get_mad_of_element('O'))
+                elif ion == 'Si_I' or ion =='Si_II' or ion == 'Si_III' or ion == 'Si_IV':
+                   mad_of_element.append(get_mad_of_element('Si'))
+                elif ion == 'Fe_I'or ion == 'Fe_II' or ion == 'Fe_III':
+                   mad_of_element.append(get_mad_of_element('Fe'))
+                elif ion == 'N_I' or ion == 'N_II' or ion == 'N_III' or ion == 'N_IV' or ion == 'N_V':
+                   mad_of_element.append(get_mad_of_element('N'))
+                elif ion == 'Mg_I' or ion == 'Mg_II':
+                   mad_of_element.append(get_mad_of_element('Mg'))   
+                elif ion == 'S_I' or ion == 'S_II' or ion == 'S_III' or ion == 'S_IV' or ion == 'S_V' or ion == 'S_VI':
+                   mad_of_element.append(get_mad_of_element('S'))
     
                 
     
@@ -608,11 +643,16 @@ for ion in new_ion_list:
         clump_stats["num_of_clumps"] = num_clumps
         clump_stats["rep_clump_row"] = rows_of_rep_clumps
         clump_stats["category_rep_clump"] = cat_rep_clump
+        clump_stats["mad_of_element"] = mad_of_element
     
-        print(len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
+        print(ion, len(ray_nums), len(super_cl_nums), len(med_col_dens), len(mad_for_med), len(central_v), len(vel_dispersions))
         
-        df = pd.DataFrame.from_dict(clump_stats)
-        df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
+        try:
+            df = pd.DataFrame.from_dict(clump_stats)
+            df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
+        except ValueError:
+            print('This really should not happen and I can not figure out why it does unless abundance file mismatches other args')
+            continue
         ##as we're done with each file, delete it so we don't get residual data we don't need
    
         os.remove(f"Match_{ion}_Ray{r}.pickle")
