@@ -174,21 +174,21 @@ my_rays = ray_files_split[ comm.rank ]
 ion_list = ['C I', 'C II', 'C III', 'C IV','Si I', 'Si II', 'Si III', 'Si IV', 'Fe I', 'Fe II', 'Fe III', 'N I', 'N II', 'N III', 'N IV', 'N V', 'O I', 'O II', 'O III', 'O IV', 'O V', 'O VI', 'Mg I', 'Mg II', 'S I', 'S II', 'S III', 'S IV', 'S V', 'S VI'] ##lists of elements and abundances 
 new_ion_list = ['C_I', 'C_II', 'C_III', 'C_IV','Si_I', 'Si_II', 'Si_III', 'Si_IV', 'Fe_I', 'Fe_II', 'Fe_III', 'N_I', 'N_II', 'N_III', 'N_IV', 'N_V', 'O_I', 'O_II', 'O_III', 'O_IV', 'O_V', 'O_VI', 'Mg_I', 'Mg_II', 'S_I', 'S_II', 'S_III', 'S_IV', 'S_V', 'S_VI']
 
-# if 'file_path' in dic_args:
-#     abun = pd.read_csv(args.file_path, delim_whitespace=True)
-#     nrows = len(abun)
-#     saved = generate_names(nrows)
-#     for row_num in range(nrows):
-#         for i in ion_list:
-#             try:
-#                 abundances = abun.iloc[row_num].to_dict()
-#                 abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
-#                 df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-#                 df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
-#                 print("Go look at your data!")
-#             except AttributeError: ##handles if there are no clumps in a halo
-#                 df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
-#                 df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
+if 'file_path' in dic_args:
+    abun = pd.read_csv(args.file_path, delim_whitespace=True)
+    nrows = len(abun)
+    saved = generate_names(nrows)
+    for row_num in range(nrows):
+        for i in ion_list:
+            try:
+                abundances = abun.iloc[row_num].to_dict()
+                abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
+                df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+                print("Go look at your data!")
+            except AttributeError: ##handles if there are no clumps in a halo
+                df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
 
 
 
@@ -224,11 +224,13 @@ for ion in new_ion_list:
         mx= 0  ##find how long each array should be
         for ds in rowlist: #find the cell index of the furthest clump
             if len(ds['interval_end']) == 0: ##handles if there are no clumps in a row
-                break
+                continue
             else:
                 row_mx = max(ds["interval_end"])
-                if row_mx>mx:
-                    mx=row_mx
+                if row_mx > mx:
+                    mx = row_mx
+                    print(mx)
+        print(f'ion: {ion}, ray: {r}, MAX: {mx}')
         
     
         super_clumps = np.zeros(int(mx))
@@ -330,7 +332,7 @@ for ion in new_ion_list:
 
                 if super_clumps[i-1]>super_clumps[i]: ##end of a super clump
                     if super_clumps[i-1]==2:
-                        sup_en = i-2
+                        sup_en = i-2 
                         sup_st = sup_st_true[0] ##edge case handling
 
                     if super_clumps[i-1] == 0 or super_clumps[i-1] == 1:
@@ -483,6 +485,7 @@ for ion in new_ion_list:
             num_spl_sho = 0
     
             for k in range(len(sup_st)): ##depending on which category each clump belongs to in super_clumps
+                print(f'Start: {sup_st}, End: {sup_en}')
                 col_density_match = [] ##lists for col_density
                 col_density_split = []
                 col_density_short = []
@@ -490,7 +493,6 @@ for ion in new_ion_list:
                 short_done = []
                 split_done = []
                 sol_ab_col_dens = 0.0
-                print(sup_st)
     
                 for row, index in match.items(): ##first, see what matches the super clump
     
@@ -604,7 +606,6 @@ for ion in new_ion_list:
                 num_spl_sho = 0
                 
                 if sol_ab_col_dens != 0.0 and len(full_col_density) != 0: ##handle the case where there is no col_density for the solar abundance
-                    print(f"HELP:{np.median(full_col_density)}")
                     diff_from_sol.append(int(sol_ab_col_dens) - int(np.median(full_col_density)))
                 elif sol_ab_col_dens == 0.0 or len(full_col_density) == 0:
                     diff_from_sol.append(np.NaN)
