@@ -20,6 +20,7 @@ parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path
 parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int, help='The number of rays to be generated.')
 parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
+parser.add_argument('--foggie_dir', action='store', dest='foggie_dir', default=argparse.SUPPRESS, help='Path to top-level directory of supplemental FOGGIE data from github.')
 parser.add_argument('--pat', action='store', dest='pattern', default=2392, type=int, help='Desired halo pattern file ID')
 parser.add_argument('--rshift', action='store', dest='rs', default=20, type=int, help='Redshift file IDs')
 
@@ -33,7 +34,12 @@ def get_true_rs(val): ##define how to get actual rshift numbers
         true_rs = '2.5'
     return true_rs
 
-halo_names_dict = {'2392'  :  'Hurricane' ,'2878'  :  'Cyclone' , '4123'  :  'Blizzard' , '5016'  :  'Squall' ,'5036'  :  'Maelstrom' , '8508'  :  'Tempest'}
+halo_names_dict = {'2392'  :  'Hurricane',
+                   '2878'  :  'Cyclone',
+                   '4123'  :  'Blizzard',
+                   '5016'  :  'Squall',
+                   '5036'  :  'Maelstrom',
+                   '8508'  :  'Tempest'}
 
 def get_halo_names(num):
     if str(num) in halo_names_dict.keys():
@@ -42,24 +48,24 @@ def get_halo_names(num):
 
 def generate_names(length, add=''):
         
-        	"""
-        	Returns a list of generic names for multiplots anda list of generic names for raw data. These lists are typically passed to run_sal()
-        	
-        	:length: length of lists to be generated. Do not account for indexing starting at zero.
-        	
-        	:add: Additional relevant information for keeping track of multiplots and data later on. Default add=''
-        	"""
-        	ndigits = len(str(length))
-        	saved_filename_list = []
-        	
-        	for i in range(length): ##made this so that it would sort correctly for making plots
-        		m= i+1
-        		n_len = len(str(m))
-        		n_zeros = ndigits - n_len
-        		k = "0" * n_zeros + str(m)
-        		saved_filename_list.append(f'data_AbundanceRow{k}{add}')
-        		
-        	return saved_filename_list
+            """
+            Returns a list of generic names for multiplots anda list of generic names for raw data. These lists are typically passed to run_sal()
+            
+            :length: length of lists to be generated. Do not account for indexing starting at zero.
+            
+            :add: Additional relevant information for keeping track of multiplots and data later on. Default add=''
+            """
+            ndigits = len(str(length))
+            saved_filename_list = []
+            
+            for i in range(length): ##made this so that it would sort correctly for making plots
+                m= i+1
+                n_len = len(str(m))
+                n_zeros = ndigits - n_len
+                k = "0" * n_zeros + str(m)
+                saved_filename_list.append(f'data_AbundanceRow{k}{add}')
+                
+            return saved_filename_list
 
 # defining analysis parameters
 # Note: these dictionaries are temporary and should most likely be included in the arguments at some point
@@ -76,9 +82,6 @@ def make_full_list(list_in, list_out):
         list_out.append(element)
     return list_out
 
-# EDIT THIS LINE TO LOCAL FOGGIE LOCATION
-
-foggie_dir = "/mnt/home/f0104093/foggie/foggie/halo_infos"
 
 # set desired halo pattern
 halo = args.pattern
@@ -91,11 +94,11 @@ true_rs = get_true_rs(rs) ##gets the true rs needed
 def foggie_defunker(foggie_dir):
     # initializing dictionary to store all of the galactic center data
     center_dat = {}
-
     # creating branch for each halo
     center_dat[halo] = {}
-    # some hardcoded pipelies that will need to be changed
-    cen_dat = pd.read_csv(f"/mnt/home/f0104093/foggie/foggie/halo_infos/00{halo}/nref11c_nref9f/halo_c_v", sep = '|', names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
+    
+    cen_dat = pd.read_csv(foggie_dir + f"/foggie/halo_infos/00{halo}/nref11c_nref9f/halo_c_v", sep = '|', 
+                          names = ['null','redshift','name','xc','yc','zc','xv','yv','zv','null2'])
     # making some fixes specific to these files
     cen_dat = cen_dat.drop(0)
     cen_dat = cen_dat.drop(columns = ['null','null2'])
@@ -110,7 +113,7 @@ def foggie_defunker(foggie_dir):
     return center_dat
 
 # fetching the galactic center data for all halo patterns and redshifts
-center_dat = foggie_defunker(foggie_dir)
+center_dat = foggie_defunker(args.foggie_dir)
 
 # identifying the path argument as a variable
 path = os.path.expandvars(os.path.expanduser(args.path))
@@ -141,7 +144,9 @@ print(type(ds))
 center = ds.arr(center_dat[halo][rs]['pos'], 'kpc')
 gal_vel = ds.arr(center_dat[halo][rs]['vel'], 'km/s')
 other_fields=['density', 'temperature', 'metallicity', ('index', 'radius')]
+# These next two should *definitely* be parameterized
 max_impact=15 #kpc
+ray_length=600 #kpc
 units_dict = dict(density='g/cm**3', metallicity='Zsun')
 
 ray_num=f'{0:0{len(str(args.nrays))}d}'
@@ -149,13 +154,15 @@ ray_file=f'{ray_path}/ray{ray_num}.h5'
 
 np.random.seed(11)
 
-#get those rays babyyyy
-# CK: Check that rays already exist, and that the have the additional fields contained
+# get those rays babyyyy
+# CK: Check that rays already exist, and that they have the additional fields contained
 # in the third argument (empty for now; might become a user parameter)
-check = check_rays(ray_path, args.nrays, [])
+check = check_rays(ray_path, args.nrays, other_fields)
 if not check:
     print("WARNING: rays not found. Generating new ones.")
-    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, length=600, field_parameters={'bulk_velocity':gal_vel}, ion_list=['H I'], fields=other_fields, out_dir=ray_path)
+    salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, 
+                         length=ray_length, field_parameters={'bulk_velocity':gal_vel},
+                         ion_list=['H I'], fields=other_fields, out_dir=ray_path)
 
 ray_list=[]
 for i in range(args.nrays):
@@ -171,6 +178,8 @@ ray_arr = np.array(ray_list)
 ray_files_split = np.array_split(ray_arr, comm.size)
 my_rays = ray_files_split[ comm.rank ]
 
+# Should parameterize these as well
+# CK: why are there two of these?
 ion_list = ['C I', 'C II', 'C III', 'C IV','Si I', 'Si II', 'Si III', 'Si IV', 'Fe I', 'Fe II', 'Fe III', 'N I', 'N II', 'N III', 'N IV', 'N V', 'O I', 'O II', 'O III', 'O IV', 'O V', 'O VI', 'Mg I', 'Mg II', 'S I', 'S II', 'S III', 'S IV', 'S V', 'S VI'] ##lists of elements and abundances 
 new_ion_list = ['C_I', 'C_II', 'C_III', 'C_IV','Si_I', 'Si_II', 'Si_III', 'Si_IV', 'Fe_I', 'Fe_II', 'Fe_III', 'N_I', 'N_II', 'N_III', 'N_IV', 'N_V', 'O_I', 'O_II', 'O_III', 'O_IV', 'O_V', 'O_VI', 'Mg_I', 'Mg_II', 'S_I', 'S_II', 'S_III', 'S_IV', 'S_V', 'S_VI']
 
@@ -184,11 +193,11 @@ if 'file_path' in dic_args:
                 abundances = abun.iloc[row_num].to_dict()
                 abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
                 df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ')
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ', index=False)
                 print("Go look at your data!")
             except AttributeError: ##handles if there are no clumps in a halo
                 df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
-                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt')
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt',index=False)
 
 
 

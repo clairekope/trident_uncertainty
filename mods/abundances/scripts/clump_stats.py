@@ -188,4 +188,4 @@ clump_stats["num_of_clumps"] = num_clumps
 clump_stats["rep_clumps_row"] = rows_of_rep_clumps
 
 df = pd.DataFrame.from_dict(clump_stats)
-df.to_csv(f"halo_rshift_{ion}_abun_model-family_all-clumps.csv" ,sep = ' ')
+df.to_csv(f"halo_rshift_{ion}_abun_model-family_all-clumps.csv", sep = ' ', index=False)
