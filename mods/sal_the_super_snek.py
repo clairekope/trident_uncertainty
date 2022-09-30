@@ -16,7 +16,7 @@ comm = MPI.COMM_WORLD
 print(f"Let's do some math, kids")
 
 parser = argparse.ArgumentParser(description = "Preliminary constants for SALSA pipeline.")
-parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where rays and output data will be stored. Directory should contain three other directories called "data", "rays", and "visuals" for program to run smoothly.')
+parser.add_argument('--ds', nargs='?', action='store', required=True, dest='path', help='Path where rays and output data will be stored.')
 parser.add_argument('--nrays', action='store', dest='nrays', default=4, type=int, help='The number of rays to be generated.')
 parser.add_argument('--abun', action='store', dest='file_path', default=argparse.SUPPRESS, help='Path to abundance file, if any. Defaults to solar abundances.')
 parser.add_argument('--halo_dir', action='store', dest='halo_dir', default='/mnt/research/galaxies-REU/sims/FOGGIE', help='Path to halo data.')
@@ -156,8 +156,8 @@ np.random.seed(11)
 
 # get those rays babyyyy
 # CK: Check that rays already exist, and that they have the additional fields contained
-# in the third argument (empty for now; might become a user parameter)
-check = check_rays(ray_path, args.nrays, other_fields)
+# in the third argument (keep empty bc using calc_missing = True later on)
+check = check_rays(ray_path, args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
     salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, 
@@ -193,11 +193,11 @@ if 'file_path' in dic_args:
                 abundances = abun.iloc[row_num].to_dict()
                 abs_ext = salsa.AbsorberExtractor(ds, ray_file, ion_name = i, velocity_res =20, abundance_table = abundances, calc_missing=True)
                 df = salsa.get_absorbers(abs_ext, my_rays, method='spice', fields=other_fields, units_dict=units_dict).drop(columns='index')
-                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ', index=False)
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}.txt', sep = ' ', index=True)
                 print("Go look at your data!")
             except AttributeError: ##handles if there are no clumps in a halo
                 df = pd.DataFrame(columns =['name', 'wave', 'redshift', 'col_dens', 'delta_v', 'vel_dispersion', 'interval_start', 'interval_end', 'density', 'temperature', 'metallicity', 'radius', 'lightray_index'], index = ['0'] )
-                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt',index=False)
+                df.to_csv(f'{dat_path}/{saved[row_num]}_{i.replace(" ", "_")}_null.txt',index=True)
 
 
 
@@ -658,7 +658,7 @@ for ion in new_ion_list:
         
         try:
             df = pd.DataFrame.from_dict(clump_stats)
-            df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN') ##save the files to scratch
+            df.to_csv(f"{stat_path}/{halo}_z{true_rs}_{ion}_abun_all-model-families_all-clumps.csv" ,sep = ' ', na_rep = 'NaN',index=False) ##save the files to scratch
         except ValueError:
             print('This really should not happen and I can not figure out why it does unless abundance file mismatches other args')
             continue
