@@ -157,7 +157,7 @@ np.random.seed(11)
 # get those rays babyyyy
 # CK: Check that rays already exist, and that they have the additional fields contained
 # in the third argument (empty for now; might become a user parameter)
-check = check_rays(ray_path, args.nrays, other_fields)
+check = check_rays(ray_path, args.nrays, [])
 if not check:
     print("WARNING: rays not found. Generating new ones.")
     salsa.generate_lrays(ds, center.to('code_length'), args.nrays, max_impact, 
@@ -664,7 +664,7 @@ for ion in new_ion_list:
             continue
         ##as we're done with each file, delete it so we don't get residual data we don't need
    
-        os.remove(f"Match_{ion}_Ray{r}.pickle")
-        os.remove(f"Short_{ion}_Ray{r}.pickle")
-        os.remove(f"Split_{ion}_Ray{r}.pickle")
-        os.remove(f'super_clumps_array_{ion}_ray{r}.npy')
+        # os.remove(f"Match_{ion}_Ray{r}.pickle")
+        # os.remove(f"Short_{ion}_Ray{r}.pickle")
+        # os.remove(f"Split_{ion}_Ray{r}.pickle")
+        # os.remove(f'super_clumps_array_{ion}_ray{r}.npy')
