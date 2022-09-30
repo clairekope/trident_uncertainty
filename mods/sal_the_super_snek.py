@@ -448,9 +448,9 @@ for ion in new_ion_list:
     mad_of_element =[]
    
 
-    
+    # !!Hardcoded path!! Adjust to current dir for now; should be set-able. As should deleting at the end of this script!
     for r in range(raynum):
-        if os.path.exists(f'/mnt/gs18/scratch/users/f0104093/cgm_abundance_variance/Match_{ion}_Ray{r}.pickle'):
+        if os.path.exists(f'Match_{ion}_Ray{r}.pickle'):
             pickle_match_off = open(f"Match_{ion}_Ray{r}.pickle", 'rb') ##get previously made data
             match = pickle.load(pickle_match_off)
     
@@ -664,7 +664,7 @@ for ion in new_ion_list:
             continue
         ##as we're done with each file, delete it so we don't get residual data we don't need
    
-        os.remove(f"Match_{ion}_Ray{r}.pickle")
-        os.remove(f"Short_{ion}_Ray{r}.pickle")
-        os.remove(f"Split_{ion}_Ray{r}.pickle")
-        os.remove(f'super_clumps_array_{ion}_ray{r}.npy')
+        # os.remove(f"Match_{ion}_Ray{r}.pickle")
+        # os.remove(f"Short_{ion}_Ray{r}.pickle")
+        # os.remove(f"Split_{ion}_Ray{r}.pickle")
+        # os.remove(f'super_clumps_array_{ion}_ray{r}.npy')
