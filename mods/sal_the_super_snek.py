@@ -614,9 +614,9 @@ for ion in new_ion_list:
                 freq_split_short.append(num_spl_sho)
                 num_spl_sho = 0
                 
-                if sol_ab_col_dens != 0.0 and len(full_col_density) != 0: ##handle the case where there is no col_density for the solar abundance
-                    diff_from_sol.append(int(sol_ab_col_dens) - int(np.median(full_col_density)))
-                elif sol_ab_col_dens == 0.0 or len(full_col_density) == 0:
+                if sol_ab_col_dens != 0.0 and len(full_col_density) != 0: 
+                    diff_from_sol.append(sol_ab_col_dens - np.median(full_col_density))
+                elif sol_ab_col_dens == 0.0 or len(full_col_density) == 0: ##handle the case where there is no col_density for the solar abundance
                     diff_from_sol.append(np.NaN)
                     
                 if ion == 'C_II' or ion == 'C_IV' or ion == 'C_I' or ion == 'C_III': 
